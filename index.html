@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger · Personal finance</title>
+<meta name="description" content="A plain JavaScript accounting tool with offline storage, category breakdowns, cashflow and CSV or JSON exports.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <div>
+        <p class="brand-kicker">Personal finance</p>
+        <h1>Ledger</h1>
+      </div>
+    </div>
+    <div class="head-tools">
+      <label class="tool-field">
+        <span>Currency</span>
+        <select id="currency">
+          <option value="USD">USD $</option>
+          <option value="EUR">EUR €</option>
+          <option value="GBP">GBP £</option>
+          <option value="NGN">NGN ₦</option>
+        </select>
+      </label>
+      <button id="exportCsv" class="btn btn-quiet" type="button">Export CSV</button>
+      <button id="exportJson" class="btn btn-quiet" type="button">Backup</button>
+      <label class="btn btn-quiet import-label">
+        Import
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+      </label>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="Account summary">
+    <article class="summary-card">
+      <p class="summary-label">Balance</p>
+      <p class="summary-value" id="balance">$0.00</p>
+      <p class="summary-note" id="balanceNote">All time</p>
+    </article>
+    <article class="summary-card">
+      <p class="summary-label">Income</p>
+      <p class="summary-value income" id="income">$0.00</p>
+      <p class="summary-note" id="incomeNote">This month</p>
+    </article>
+    <article class="summary-card">
+      <p class="summary-label">Expenses</p>
+      <p class="summary-value expense" id="expenses">$0.00</p>
+      <p class="summary-note" id="expensesNote">This month</p>
+    </article>
+    <article class="summary-card">
+      <p class="summary-label">Savings rate</p>
+      <p class="summary-value" id="savings">0%</p>
+      <p class="summary-note" id="savingsNote">Nothing saved yet</p>
+    </article>
+  </section>
+
+  <main class="workspace">
+    <section class="panel transactions">
+      <div class="panel-head">
+        <div>
+          <h2>Transactions</h2>
+          <p class="sub" id="txnSub">0 entries</p>
+        </div>
+        <label class="month-field">
+          <span>Month</span>
+          <input id="month" type="month">
+        </label>
+      </div>
+      <div class="toolbar">
+        <div class="chips" id="typeFilters" role="group" aria-label="Filter by type">
+          <button class="chip is-active" type="button" data-type="all">All</button>
+          <button class="chip" type="button" data-type="income">Income</button>
+          <button class="chip" type="button" data-type="expense">Expense</button>
+        </div>
+        <label class="search">
+          <span class="visually-hidden">Search transactions</span>
+          <input id="search" type="search" placeholder="Search description or category">
+        </label>
+      </div>
+      <ul class="txn-list" id="txnList"></ul>
+      <p class="empty" id="empty" hidden>No transactions match this view.</p>
+      <div class="list-foot">
+        <span id="listCount">0 shown</span>
+        <button id="resetSample" class="link-btn" type="button">Restore sample data</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel form-panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="formTitle">Add transaction</h2>
+            <p class="sub" id="formSub">Record money in or out</p>
+          </div>
+          <span class="form-stamp" id="formStamp">New</span>
+        </div>
+        <form id="txnForm" novalidate>
+          <div class="type-toggle" id="typeToggle" role="group" aria-label="Transaction type">
+            <button type="button" data-type="expense" class="is-active">Expense</button>
+            <button type="button" data-type="income">Income</button>
+          </div>
+          <label class="field">
+            <span>Description</span>
+            <input id="desc" name="desc" type="text" placeholder="Coffee with a client" autocomplete="off" maxlength="80">
+            <small class="err" id="descErr"></small>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span>Amount</span>
+              <input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+              <small class="err" id="amountErr"></small>
+            </label>
+            <label class="field">
+              <span>Date</span>
+              <input id="date" name="date" type="date">
+            </label>
+          </div>
+          <label class="field">
+            <span>Category</span>
+            <select id="category" name="category"></select>
+          </label>
+          <div class="form-actions">
+            <button id="submitBtn" class="btn btn-solid" type="submit">Add expense</button>
+            <button id="cancelEdit" class="btn btn-quiet" type="button" hidden>Cancel</button>
+          </div>
+          <p class="form-message" id="formMessage" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Where it went</h2>
+            <p class="sub" id="breakdownSub">Expenses this month</p>
+          </div>
+        </div>
+        <ul class="breakdown" id="breakdown"></ul>
+        <p class="empty small" id="breakdownEmpty" hidden>No expenses this month.</p>
+      </section>
+    </aside>
+  </main>
+
+  <section class="panel cashflow">
+    <div class="panel-head">
+      <div>
+        <h2>Six month cashflow</h2>
+        <p class="sub">Income and expenses side by side</p>
+      </div>
+      <ul class="legend">
+        <li><i class="legend-income" aria-hidden="true"></i>Income</li>
+        <li><i class="legend-expense" aria-hidden="true"></i>Expenses</li>
+      </ul>
+    </div>
+    <div class="chart" id="cashflow" role="img" aria-label="Six month income and expense bar chart"></div>
+    <p class="empty small" id="cashflowEmpty" hidden>No transactions in this window.</p>
+  </section>
+
+  <footer class="foot">
+    <p>Stored in this browser with localStorage. Nothing leaves the device.</p>
+    <p class="mono">LEDGER / 01</p>
+  </footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden>
+  <span id="toastText"></span>
+  <button id="toastAction" type="button" hidden>Undo</button>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
